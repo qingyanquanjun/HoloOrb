@@ -1,0 +1,80 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="false" level="WARNING" enabled_by_default="false">
+      <option name="ignoredPackages">
+        <list>
+          <option value="albumentations" />
+          <option value="clip" />
+          <option value="coremltools" />
+          <option value="dill" />
+          <option value="duckdb" />
+          <option value="dvclive" />
+          <option value="ipython" />
+          <option value="lancedb" />
+          <option value="lapx" />
+          <option value="matplotlib" />
+          <option value="mss" />
+          <option value="ncnn" />
+          <option value="nncf" />
+          <option value="numpy" />
+          <option value="onnx" />
+          <option value="onnxruntime" />
+          <option value="onnxsim" />
+          <option value="openai" />
+          <option value="openvino" />
+          <option value="paddlepaddle" />
+          <option value="pafy" />
+          <option value="pandas" />
+          <option value="protobuf" />
+          <option value="psutil" />
+          <option value="pycocotools" />
+          <option value="QtFusion" />
+          <option value="ray" />
+          <option value="scipy" />
+          <option value="seaborn" />
+          <option value="streamlit" />
+          <option value="tensorflow" />
+          <option value="tensorflowjs" />
+          <option value="thop" />
+          <option value="tqdm" />
+          <option value="tritonclient" />
+          <option value="wandb" />
+          <option value="x2paddle" />
+          <option value="cupy-cuda12x" />
+          <option value="pytorch3d" />
+          <option value="faiss-gpu" />
+          <option value="magma-cuda12x" />
+          <option value="detectron2" />
+          <option value="mmcv-full" />
+          <option value="mmdet" />
+          <option value="apex" />
+          <option value="comet_ml" />
+          <option value="hub_sdk" />
+          <option value="opencv_python" />
+          <option value="Pillow" />
+          <option value="py_cpuinfo" />
+          <option value="PySide6" />
+          <option value="PySide6_Addons" />
+          <option value="PySide6_Essentials" />
+          <option value="PyYAML" />
+          <option value="Requests" />
+          <option value="sentry_sdk" />
+          <option value="Shapely" />
+          <option value="streamlit_select" />
+          <option value="super_gradients" />
+          <option value="tflite_runtime" />
+          <option value="tflite_support" />
+          <option value="yt_dlp" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyStubPackagesAdvertiser" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="pandas" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

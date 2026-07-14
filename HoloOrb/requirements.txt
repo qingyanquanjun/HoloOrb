@@ -1,0 +1,18 @@
+Flask==3.0.3
+Flask-CORS==4.0.1
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.6.0
+Flask-Migrate==4.0.7
+Flask-Bcrypt==1.0.1
+python-dotenv==1.0.1
+Werkzeug==3.0.3
+
+# MySQL 驱动
+PyMySQL==1.1.1
+cryptography==43.0.1
+
+# 密码加密
+bcrypt==4.2.0
+
+# AI API
+openai>=1.35.10

@@ -1,8 +1,5 @@
 <template>
   <div class="backup">
-    <el-alert type="info" :closable="false" show-icon style="margin-bottom: 16px">
-      <template #title>当前为演示数据，后端暂未提供备份管理API。</template>
-    </el-alert>
     <!-- 快速操作卡 -->
     <el-row :gutter="16">
       <el-col :xs="12" :sm="6" v-for="c in cards" :key="c.label">
@@ -18,8 +15,8 @@
       <div class="panel-head">
         <span class="panel-title"><el-icon><Box /></el-icon> 备份记录</span>
         <div>
-          <el-button size="small" plain><el-icon><Refresh /></el-icon> 刷新</el-button>
-          <el-button size="small" type="primary"><el-icon><Upload /></el-icon> 立即备份</el-button>
+          <el-button size="small" plain @click="loadRecords"><el-icon><Refresh /></el-icon> 刷新</el-button>
+          <el-button size="small" type="primary" @click="handleBackup"><el-icon><Upload /></el-icon> 立即备份</el-button>
         </div>
       </div>
       <el-table :data="records" stripe>
@@ -40,11 +37,11 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
-          <template #default>
-            <el-button link type="primary" size="small">下载</el-button>
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="handleDownload(row.id)">下载</el-button>
             <el-button link type="primary" size="small">校验</el-button>
             <el-button link type="warning" size="small">恢复</el-button>
-            <el-button link type="danger" size="small">删除</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -68,10 +65,9 @@
         </el-form-item>
         <el-form-item label="备份内容">
           <el-checkbox-group v-model="autoBackup.items">
-            <el-checkbox value="config">设备配置</el-checkbox>
-            <el-checkbox value="db">数据库</el-checkbox>
-            <el-checkbox value="logs">系统日志</el-checkbox>
-            <el-checkbox value="report">历史报表</el-checkbox>
+            <el-checkbox value="配置">设备配置</el-checkbox>
+            <el-checkbox value="数据">数据库</el-checkbox>
+            <el-checkbox value="日志">系统日志</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item label="保留数量">
@@ -79,8 +75,8 @@
           <span style="color: #909399; font-size: 12px; margin-left: 8px">份，超出自动清理最早备份</span>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary">保存计划</el-button>
-          <el-button>重置</el-button>
+          <el-button type="primary" @click="saveSchedule">保存计划</el-button>
+          <el-button @click="resetSchedule">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -88,9 +84,16 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import { backupRecords } from '@/config/mock'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  listBackups,
+  createBackup,
+  downloadBackup,
+  deleteBackup,
+  getSchedule,
+  updateSchedule,
+} from '@/api/backup'
 
 const cards = [
   { label: '配置备份', icon: 'Setting', color: '#409EFF', desc: '导出全部设备配置' },
@@ -98,20 +101,147 @@ const cards = [
   { label: '日志归档', icon: 'Notebook', color: '#E6A23C', desc: '日志打包归档' },
   { label: '立即恢复', icon: 'RefreshRight', color: '#F56C6C', desc: '从备份点还原' }
 ]
-const records = ref([...backupRecords])
-function quickAction(label) { ElMessage.success(`触发：${label}`) }
+
+const records = ref([])
 
 const autoBackup = reactive({
-  enabled: true,
+  enabled: false,
   period: 'daily',
   time: '02:00',
-  items: ['config', 'db'],
+  items: ['配置'],
   keep: 30
 })
+
+const defaultSchedule = {
+  enabled: false,
+  period: 'daily',
+  time: '02:00',
+  items: ['配置'],
+  keep: 30
+}
 
 function typeT(t) {
   return { 配置: '', 数据: 'warning', 日志: 'info' }[t] || ''
 }
+
+async function loadRecords() {
+  try {
+    const data = await listBackups()
+    records.value = data || []
+  } catch (e) {
+    ElMessage.error('加载备份记录失败')
+  }
+}
+
+async function handleBackup() {
+  try {
+    await ElMessageBox.confirm('确定要执行备份吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    const data = await createBackup({ type: '配置' })
+    ElMessage.success('备份成功')
+    records.value.unshift(data)
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('备份失败')
+    }
+  }
+}
+
+function quickAction(label) {
+  const typeMap = {
+    '配置备份': '配置',
+    '数据备份': '数据',
+    '日志归档': '日志'
+  }
+  const backupType = typeMap[label]
+  if (backupType) {
+    createBackupByType(backupType)
+  } else {
+    ElMessage.info('恢复功能开发中')
+  }
+}
+
+async function createBackupByType(type) {
+  try {
+    await ElMessageBox.confirm(`确定要执行${type}备份吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    const data = await createBackup({ type })
+    ElMessage.success(`${type}备份成功`)
+    records.value.unshift(data)
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error(`${type}备份失败`)
+    }
+  }
+}
+
+async function handleDownload(id) {
+  try {
+    const response = await downloadBackup(id)
+    const blob = new Blob([response], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `backup-${id}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('下载成功')
+  } catch (e) {
+    ElMessage.error('下载失败')
+  }
+}
+
+async function handleDelete(id) {
+  try {
+    await ElMessageBox.confirm('确定要删除该备份吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteBackup(id)
+    ElMessage.success('删除成功')
+    loadRecords()
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+async function loadSchedule() {
+  try {
+    const data = await getSchedule()
+    Object.assign(autoBackup, data)
+  } catch (e) {
+    console.error('加载备份计划失败', e)
+  }
+}
+
+async function saveSchedule() {
+  try {
+    await updateSchedule({ ...autoBackup })
+    ElMessage.success('保存成功')
+  } catch (e) {
+    ElMessage.error('保存失败')
+  }
+}
+
+function resetSchedule() {
+  Object.assign(autoBackup, defaultSchedule)
+}
+
+onMounted(() => {
+  loadRecords()
+  loadSchedule()
+})
 </script>
 
 <style scoped>

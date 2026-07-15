@@ -36,7 +36,6 @@
         </el-form-item>
         <el-form-item class="remember-item">
           <el-checkbox v-model="form.remember">记住密码</el-checkbox>
-          <el-link type="primary" href="#" class="forgot-link">忘记密码?</el-link>
         </el-form-item>
         <el-form-item>
           <el-button
@@ -50,9 +49,7 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <div class="login-footer">
-        <p>默认账号：admin / admin123</p>
-      </div>
+
     </div>
   </div>
 </template>
@@ -126,36 +123,19 @@ if (savedUsername) {
 .login-container {
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(64, 158, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
 }
 
 .login-wrapper {
-  position: relative;
-  z-index: 1;
   width: 100%;
   max-width: 420px;
   padding: 48px 40px;
-  background: rgba(255, 255, 255, 0.95);
+  background: #fff;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .login-header {
@@ -199,14 +179,7 @@ if (savedUsername) {
 }
 
 .remember-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24px !important;
-}
-
-.forgot-link {
-  font-size: 14px;
 }
 
 .login-btn {
@@ -217,13 +190,5 @@ if (savedUsername) {
   border-radius: 8px;
 }
 
-.login-footer {
-  text-align: center;
-}
 
-.login-footer p {
-  font-size: 12px;
-  color: #909399;
-  margin: 0;
-}
 </style>

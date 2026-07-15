@@ -77,7 +77,7 @@ drop table if exists reports;
 create table reports
 (
     id           int auto_increment comment '报告ID' primary key,
-    type         enum ('日报', '周报', '月报')         not null comment '报告类型',
+    type         enum ('日报', '周报', '月报', '专项报告')         not null comment '报告类型',
     title        varchar(200)                          not null comment '报告标题',
     content      text                                  null comment '报告内容',
     status       varchar(20) default 'generated'       null comment '生成状态',

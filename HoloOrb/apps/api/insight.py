@@ -1,8 +1,9 @@
 from flask import request, current_app
 from flask_jwt_extended import jwt_required
+from extensions import db
 from apps.common.response import success, error
 from apps.api import insight_bp
-from apps.models.models import Device, Metric
+from apps.models.models import Device, Metric, Report
 
 
 def _build_device_context() -> str:
@@ -88,3 +89,28 @@ def chat():
     except Exception as e:
         current_app.logger.error(f'DeepSeek API 调用失败: {str(e)}')
         return error(f'AI 服务调用失败: {str(e)}', http_status=500)
+
+
+@insight_bp.route('/save-report', methods=['POST'])
+@jwt_required()
+def save_report():
+    try:
+        data = request.get_json()
+        if not data or not data.get('title') or not data.get('content'):
+            return error('title 和 content 为必填项', http_status=400)
+
+        r = Report(
+            type='日报',
+            title=data['title'].strip(),
+            content=data['content'],
+            status='generated',
+        )
+        db.session.add(r)
+        db.session.commit()
+
+        return success(r.to_dict(), message='报告保存成功')
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'保存报告失败: {str(e)}')
+        return error(f'保存失败: {str(e)}', http_status=500)

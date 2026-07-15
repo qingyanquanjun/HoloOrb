@@ -14,9 +14,10 @@ auth_bp = Blueprint('auth', __name__)
 users_bp = Blueprint('users', __name__)
 logs_bp = Blueprint('logs', __name__)
 insight_bp = Blueprint('insight', __name__)
+backup_bp = Blueprint('backup', __name__)
 
 from apps.api import health, example  # noqa: E402,F401
-from apps.api import dashboard, devices, alerts, metrics, reports, auth, logs, insight  # noqa: E402
+from apps.api import dashboard, devices, alerts, metrics, reports, auth, logs, insight, tasks, backup  # noqa: E402
 
 api_bp.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 api_bp.register_blueprint(devices_bp, url_prefix='/devices')
@@ -27,3 +28,4 @@ api_bp.register_blueprint(auth_bp, url_prefix='/auth')
 api_bp.register_blueprint(users_bp, url_prefix='/users')
 api_bp.register_blueprint(logs_bp, url_prefix='/logs')
 api_bp.register_blueprint(insight_bp, url_prefix='/insight')
+api_bp.register_blueprint(backup_bp, url_prefix='/backup')

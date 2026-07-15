@@ -8,6 +8,9 @@
           <el-button size="small" text style="margin-left: 10px" @click="clearChat">
             <el-icon><Delete /></el-icon> 清空对话
           </el-button>
+          <el-button size="small" type="primary" style="margin-left: 10px" @click="showSaveDialog = true" :disabled="!hasAssistantReply">
+            <el-icon><Document /></el-icon> 保存报告
+          </el-button>
         </div>
       </div>
 
@@ -52,18 +55,53 @@
         </el-button>
       </div>
     </div>
+
+    <el-dialog v-model="showSaveDialog" title="保存为报告" width="500px" destroy-on-close>
+      <el-form :model="reportForm" label-width="80px">
+        <el-form-item label="报告标题">
+          <el-input v-model="reportForm.title" placeholder="请输入报告标题" />
+        </el-form-item>
+        <el-form-item label="报告内容">
+          <el-input v-model="reportForm.content" type="textarea" :rows="6" readonly />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showSaveDialog = false">取消</el-button>
+        <el-button type="primary" @click="saveAsReport" :disabled="!reportForm.title.trim()">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import { chat } from '@/api/insight'
+import { ref, nextTick, computed, reactive, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { chat, saveReport } from '@/api/insight'
 
 const input = ref('')
 const loading = ref(false)
 const messages = ref([])
 const chatBodyRef = ref(null)
+const showSaveDialog = ref(false)
+const reportForm = reactive({
+  title: '',
+  content: ''
+})
+
+const hasAssistantReply = computed(() => {
+  return messages.value.some(m => m.role === 'assistant' && !m.typing && m.content)
+})
+
+watch(showSaveDialog, (val) => {
+  if (val) {
+    const assistantMsgs = messages.value.filter(m => m.role === 'assistant' && !m.typing && m.content)
+    if (assistantMsgs.length > 0) {
+      const lastMsg = assistantMsgs[assistantMsgs.length - 1]
+      reportForm.content = lastMsg.content.replace(/<[^>]+>/g, '').replace(/<br\/>/g, '\n').trim()
+      reportForm.title = ''
+    }
+  }
+})
 
 const quickQuestions = [
   '分析当前 CPU 占用最高的 3 台设备，并给出优化建议',
@@ -165,6 +203,23 @@ function clearChat() {
   if (!messages.value.length) return
   messages.value = []
   ElMessage.info('对话已清空')
+}
+
+async function saveAsReport() {
+  if (!reportForm.title.trim()) {
+    ElMessage.warning('请输入报告标题')
+    return
+  }
+  try {
+    await saveReport({
+      title: reportForm.title.trim(),
+      content: reportForm.content
+    })
+    ElMessage.success('报告保存成功')
+    showSaveDialog.value = false
+  } catch (error) {
+    ElMessage.error('保存失败')
+  }
 }
 </script>
 

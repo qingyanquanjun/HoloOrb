@@ -131,7 +131,6 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseChart from '@/components/BaseChart.vue'
 import { listReports, createReport, deleteReport } from '@/api/reports'
@@ -271,19 +270,30 @@ function handlePreview(row) {
 }
 
 function handleDownload(row) {
-  const exportData = [{
-    '报表编号': row.id,
-    '报表名称': row.title,
-    '类型': row.type,
-    '生成时间': row.generated_at || '-',
-    '状态': row.status === 'generated' ? '已完成' : row.status,
-    '内容': row.content || '-'
-  }]
-  
-  const ws = XLSX.utils.json_to_sheet(exportData)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '报表详情')
-  XLSX.writeFile(wb, `${row.title}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  const mdContent = `# ${row.title}
+
+## 报表信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 报表编号 | ${row.id} |
+| 类型 | ${row.type} |
+| 生成时间 | ${row.generated_at || '-'} |
+| 状态 | ${row.status === 'generated' ? '已完成' : row.status} |
+
+## 报表内容
+
+${row.content || '暂无内容'}
+`
+  const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${row.title}_${new Date().toISOString().slice(0, 10)}.md`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 onMounted(() => {

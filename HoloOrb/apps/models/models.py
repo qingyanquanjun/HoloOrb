@@ -152,7 +152,7 @@ class Report(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True, comment='报告ID')
-    type = db.Column(db.Enum('日报', '周报', '月报', name='report_type'), nullable=False, comment='报告类型')
+    type = db.Column(db.Enum('日报', '周报', '月报', '专项报告', name='report_type'), nullable=False, comment='报告类型')
     title = db.Column(db.String(200), nullable=False, comment='报告标题')
     content = db.Column(db.Text, nullable=True, comment='报告内容')
     status = db.Column(db.String(20), nullable=True, default='generated', comment='生成状态')
@@ -251,5 +251,42 @@ class OpLog(db.Model):
             'username': self.user.username if self.user else None,
             'action': self.action,
             'detail': self.detail or '',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+        }
+
+
+# ------------------------------------------------------------------
+# Backup 备份记录表
+# ------------------------------------------------------------------
+class Backup(db.Model):
+    __tablename__ = 'backups'
+    __table_args__ = (
+        Index('idx_created', 'created_at'),
+        Index('idx_type', 'type'),
+        {'comment': '备份记录表', 'mysql_row_format': 'DYNAMIC'},
+    )
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True, comment='备份ID')
+    name = db.Column(db.String(200), nullable=False, comment='备份名称')
+    type = db.Column(
+        db.Enum('配置', '数据', '日志', name='backup_type'),
+        nullable=False, default='配置', comment='备份类型',
+    )
+    file_path = db.Column(db.String(500), nullable=False, comment='备份文件路径')
+    size = db.Column(db.String(50), nullable=True, comment='文件大小')
+    status = db.Column(
+        db.Enum('success', 'failed', name='backup_status'),
+        nullable=False, default='success', comment='备份状态',
+    )
+    created_at = db.Column(db.DateTime, nullable=True, default=datetime.now, comment='执行时间')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'type': self.type,
+            'file_path': self.file_path,
+            'size': self.size or '',
+            'status': '成功' if self.status == 'success' else '失败',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
         }

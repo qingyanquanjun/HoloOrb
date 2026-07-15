@@ -58,7 +58,7 @@
         <div class="panel">
           <div class="panel-head">
             <span class="panel-title">近期告警</span>
-            <el-button link type="primary" size="small">查看全部 →</el-button>
+            <el-button link type="primary" size="small" @click="goToAlarmCenter">查看全部 →</el-button>
           </div>
           <el-table :data="recentAlarms" size="small" stripe>
             <el-table-column width="70" label="级别">
@@ -83,10 +83,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import BaseChart from '@/components/BaseChart.vue'
 import { getOverview, getCpuMemoryTrend, getTrafficTrend, getDevicesByType, getRecentAlarms } from '@/api/dashboard'
 
+const router = useRouter()
 const range = ref('30d')
 
 const overview = ref({
@@ -209,6 +211,9 @@ const deviceTypeOption = computed(() => {
   }
 })
 
+function goToAlarmCenter() {
+  router.push('/alarm')
+}
 function levelTag(l) {
   return { danger: 'danger', warning: 'warning', primary: 'info', info: '' }[l] || 'info'
 }

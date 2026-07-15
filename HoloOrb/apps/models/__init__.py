@@ -9,4 +9,5 @@ from apps.models.models import (
     Report,
     User,
     OpLog,
+    Backup,
 )  # noqa: F401

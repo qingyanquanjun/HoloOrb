@@ -7,3 +7,11 @@ export function chat(data) {
     data
   })
 }
+
+export function saveReport(data) {
+  return request({
+    url: '/api/insight/save-report',
+    method: 'post',
+    data
+  })
+}

@@ -62,8 +62,8 @@ def create_report():
     p = request.get_json(silent=True) or {}
     if not p.get('type') or not p.get('title'):
         return error('type 和 title 为必填项')
-    if p['type'] not in ('日报', '周报', '月报'):
-        return error('type 只允许：日报/周报/月报')
+    if p['type'] not in ('日报', '周报', '月报', '专项报告'):
+        return error('type 只允许：日报/周报/月报/专项报告')
     r = Report(
         type=p['type'],
         title=p['title'],

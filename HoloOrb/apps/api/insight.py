@@ -1,4 +1,5 @@
-from flask import request, current_app
+import json
+from flask import request, current_app, Response, stream_with_context
 from flask_jwt_extended import jwt_required
 from extensions import db
 from apps.common.response import success, error
@@ -77,14 +78,44 @@ def chat():
         history = data.get('history', [])
         messages = [system_msg] + history + [{"role": "user", "content": data['message']}]
 
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=False
-        )
+        stream = data.get('stream', True)
 
-        content = response.choices[0].message.content
-        return success({'content': content})
+        if not stream:
+            # 非流式模式（兼容旧版）
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=False
+            )
+            content = response.choices[0].message.content
+            return success({'content': content})
+
+        # 流式模式
+        def generate():
+            try:
+                stream_response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True
+                )
+                for chunk in stream_response:
+                    if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        yield f"data: {json.dumps({'content': content})}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                current_app.logger.error(f'流式响应异常: {str(e)}')
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no',
+                'Connection': 'keep-alive'
+            }
+        )
 
     except Exception as e:
         current_app.logger.error(f'DeepSeek API 调用失败: {str(e)}')

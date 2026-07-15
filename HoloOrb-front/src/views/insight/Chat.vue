@@ -32,9 +32,10 @@
               <el-icon v-else><MagicStick /></el-icon>
             </div>
             <div class="bubble">
-              <div v-if="m.role === 'assistant' && m.typing" class="typing">
+              <div v-if="m.role === 'assistant' && m.typing && !m.content" class="typing">
                 <span></span><span></span><span></span>
               </div>
+              <div v-else-if="m.role === 'assistant' && m.typing" v-html="m.content + '<span class=\'cursor-blink\'>|</span>'"></div>
               <div v-else v-html="m.content"></div>
             </div>
           </div>
@@ -76,7 +77,7 @@
 <script setup>
 import { ref, nextTick, computed, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { chat, saveReport } from '@/api/insight'
+import { chatStream, saveReport } from '@/api/insight'
 
 const input = ref('')
 const loading = ref(false)
@@ -174,20 +175,35 @@ async function sendMsg() {
 
   addMsg('assistant', '', true)
   const replyIndex = messages.value.length - 1
+  let rawContent = ''
 
   const history = messages.value.slice(0, -1).map(m => ({
     role: m.role,
-    content: m.content.replace(/<br\/>/g, '\n').replace(/<[^>]+>/g, '')
+    content: (m.rawContent || m.content || '').replace(/<br\/>/g, '\n').replace(/<[^>]+>/g, '')
   }))
 
   try {
-    const res = await chat({ message: text, history })
+    await chatStream(
+      { message: text, history },
+      (chunk) => {
+        rawContent += chunk
+        messages.value[replyIndex].rawContent = rawContent
+        messages.value[replyIndex].content = rawContent.replace(/\n/g, '<br/>')
+        scrollBottom()
+      }
+    )
     messages.value[replyIndex].typing = false
-    messages.value[replyIndex].content = markdownToHtml(res.content)
+    messages.value[replyIndex].content = markdownToHtml(rawContent)
   } catch (error) {
     messages.value[replyIndex].typing = false
-    messages.value[replyIndex].content = `<span style="color:#F56C6C">AI 服务调用失败：${error.message || '未知错误'}</span>`
-    ElMessage.error('AI 服务调用失败')
+    if (rawContent) {
+      messages.value[replyIndex].content = markdownToHtml(rawContent)
+    } else {
+      messages.value[replyIndex].content = `<span style="color:#F56C6C">AI 服务调用失败：${error.message || '未知错误'}</span>`
+    }
+    if (error.name !== 'AbortError') {
+      ElMessage.error('AI 服务调用失败')
+    }
   }
 
   scrollBottom()
@@ -332,6 +348,16 @@ async function saveAsReport() {
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+:deep(.cursor-blink) {
+  animation: cursor-blink 1s step-end infinite;
+  color: #409EFF;
+  font-weight: bold;
+}
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 
 .chat-input {
   display: flex;
